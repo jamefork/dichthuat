@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ứng dụng Dịch thuật Trung-Việt</title>
+    <!-- Tải Tailwind CSS để làm đẹp giao diện -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Sử dụng font Inter cho dễ đọc */
+        body { 
+            font-family: 'Inter', sans-serif; 
+        }
+        /* Cấu hình layout dạng lưới cho 2 ô văn bản */
+        .textarea-container { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 1rem; 
+        }
+        /* Khi màn hình lớn hơn (desktop), chia thành 2 cột */
+        @media (min-width: 768px) { 
+            .textarea-container { 
+                grid-template-columns: 1fr 1fr; 
+            } 
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl bg-white rounded-xl shadow-lg p-6 md:p-8">
+        <!-- Tiêu đề -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Dịch thuật Trung - Việt</h1>
+            <p class="text-gray-500 mt-2">Giao tiếp an toàn qua Backend trên Render</p>
+        </div>
+
+        <!-- Vùng nhập liệu và hiển thị kết quả -->
+        <div class="textarea-container mb-4">
+            <div>
+                <label for="inputText" class="block mb-2 font-semibold text-gray-700">Văn bản tiếng Trung (中文)</label>
+                <textarea id="inputText" rows="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="请输入要翻译的中文文本..."></textarea>
+            </div>
+            <div>
+                <label for="outputText" class="block mb-2 font-semibold text-gray-700">Bản dịch tiếng Việt (越南语)</label>
+                <textarea id="outputText" rows="8" class="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none" readonly placeholder="Kết quả dịch sẽ hiển thị ở đây..."></textarea>
+            </div>
+        </div>
+
+        <!-- Nút bấm và thông báo trạng thái -->
+        <div class="flex flex-col md:flex-row items-center justify-between">
+            <button id="translateBtn" class="w-full md:w-auto bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-transform transform hover:scale-105 mb-4 md:mb-0">
+                Dịch ngay
+            </button>
+            <p id="status" class="text-sm text-gray-600 h-5"></p>
+        </div>
+    </div>
+
+    <script>
+        // Lấy các phần tử trên trang
+        const translateBtn = document.getElementById('translateBtn');
+        const inputText = document.getElementById('inputText');
+        const outputText = document.getElementById('outputText');
+        const statusEl = document.getElementById('status');
+        
+        // QUAN TRỌNG:
+        // URL này trỏ đến API trên chính máy chủ đang phục vụ trang web.
+        // Bằng cách này, nó sẽ hoạt động cả ở local và khi đã deploy trên Render.
+        const BACKEND_API_ENDPOINT = '/api/translate';
+
+        // Hàm xử lý việc dịch thuật
+        async function translateText() {
+            const query = inputText.value.trim();
+            if (!query) {
+                statusEl.textContent = 'Vui lòng nhập văn bản cần dịch.';
+                return;
+            }
+
+            // Vô hiệu hóa nút bấm và hiển thị trạng thái
+            statusEl.textContent = 'Đang gửi yêu cầu...';
+            outputText.value = '';
+            translateBtn.disabled = true;
+            translateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                // Gửi yêu cầu POST đến backend
+                const response = await fetch(BACKEND_API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: query })
+                });
+
+                const data = await response.json();
+                
+                // Nếu backend trả về lỗi, hiển thị lỗi đó
+                if (!response.ok) {
+                    throw new Error(data.error || 'Lỗi không xác định từ server.');
+                }
+
+                // Xử lý kết quả trả về từ Youdao (thông qua backend)
+                if (data.errorCode === "0") {
+                    outputText.value = data.translation ? data.translation.join('\n') : '';
+                    statusEl.textContent = 'Dịch thành công!';
+                } else {
+                    console.error('API Error from Youdao:', data);
+                    statusEl.textContent = `Lỗi API: ${data.errorCode}.`;
+                    outputText.value = `Mã lỗi: ${data.errorCode}\nKiểm tra lại cấu hình API Key trên server.`;
+                }
+
+            } catch (error) {
+                // Xử lý lỗi kết nối mạng
+                console.error('Fetch Error:', error);
+                statusEl.textContent = 'Lỗi kết nối đến backend.';
+                outputText.value = `Không thể kết nối đến máy chủ. Hãy đảm bảo máy chủ backend đang chạy. Lỗi: ${error.message}`;
+            } finally {
+                // Kích hoạt lại nút bấm sau khi hoàn tất
+                translateBtn.disabled = false;
+                translateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+        
+        // Gắn sự kiện click cho nút bấm
+        translateBtn.addEventListener('click', translateText);
+    </script>
+
+</body>
+</html>
