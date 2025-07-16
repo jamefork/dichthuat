@@ -1,11 +1,11 @@
-// index.js - Backend Server Hoàn chỉnh (Tương thích Vercel)
+// index.js - Backend Server Hoàn chỉnh (Tương thích Vercel - Đã đơn giản hóa)
 
 // --- Import các thư viện cần thiết ---
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const crypto = require('crypto');
-const path = require('path');
+// const path = require('path'); // Không cần dùng path nữa
 
 // --- CẤU HÌNH ---
 const app = express();
@@ -19,10 +19,6 @@ const APP_SECRET = process.env.YOUDAO_APP_SECRET;
 // --- Middleware ---
 app.use(cors()); // Cho phép yêu cầu từ các nguồn khác
 app.use(express.json()); // Cho phép server đọc dữ liệu JSON
-
-// Phục vụ file index.html khi truy cập vào trang chủ
-// Đoạn này quan trọng để Vercel biết cách phục vụ file tĩnh
-app.use(express.static(path.resolve(__dirname)));
 
 // --- Hàm tiện ích của Youdao ---
 function truncate(q) {
