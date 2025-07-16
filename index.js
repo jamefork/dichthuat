@@ -1,4 +1,4 @@
-// index.js - Backend Server Hoàn chỉnh
+// index.js - Backend Server Hoàn chỉnh (Tương thích Vercel)
 
 // --- Import các thư viện cần thiết ---
 const express = require('express');
@@ -9,10 +9,10 @@ const path = require('path');
 
 // --- CẤU HÌNH ---
 const app = express();
-// Render cung cấp biến môi trường PORT. Nếu không có, dùng cổng 3000 cho local.
+// Vercel cung cấp biến môi trường PORT. Nếu không có, dùng cổng 3000 cho local.
 const PORT = process.env.PORT || 3000; 
 
-// Đọc API Keys từ biến môi trường trên Render để bảo mật
+// Đọc API Keys từ biến môi trường trên Vercel để bảo mật
 const APP_KEY = process.env.YOUDAO_APP_KEY;
 const APP_SECRET = process.env.YOUDAO_APP_SECRET;
 
@@ -21,10 +21,8 @@ app.use(cors()); // Cho phép yêu cầu từ các nguồn khác
 app.use(express.json()); // Cho phép server đọc dữ liệu JSON
 
 // Phục vụ file index.html khi truy cập vào trang chủ
-app.use(express.static(path.join(__dirname)));
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+// Đoạn này quan trọng để Vercel biết cách phục vụ file tĩnh
+app.use(express.static(path.resolve(__dirname)));
 
 // --- Hàm tiện ích của Youdao ---
 function truncate(q) {
@@ -36,6 +34,7 @@ function truncate(q) {
 }
 
 // --- API Endpoint cho việc dịch thuật ---
+// Vercel sẽ tự động chuyển các yêu cầu /api/translate đến đây nhờ vercel.json
 app.post('/api/translate', async (req, res) => {
     try {
         const { text: query } = req.body;
@@ -78,7 +77,13 @@ app.post('/api/translate', async (req, res) => {
     }
 });
 
-// --- Khởi động máy chủ ---
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+// --- Khởi động máy chủ (chỉ dùng cho local) ---
+// Vercel sẽ không chạy đoạn này, nhưng nó hữu ích khi bạn chạy trên máy tính
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server is running for local development on port ${PORT}`);
+    });
+}
+
+// Xuất (export) app để Vercel có thể sử dụng
+module.exports = app;
