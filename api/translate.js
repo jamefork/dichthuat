@@ -1,4 +1,4 @@
-// api/translate.js - Serverless Function for Vercel
+// api/translate.js - Serverless Function for Vercel (with Debug Logging)
 
 // --- Import các thư viện cần thiết ---
 const axios = require('axios');
@@ -45,8 +45,25 @@ module.exports = async (req, res) => {
         const from = 'zh-CHS';
         const to = 'vi';
         
-        const signStr = APP_KEY + truncate(query) + salt + curtime + APP_SECRET;
+        const truncatedQuery = truncate(query);
+        const signStr = APP_KEY + truncatedQuery + salt + curtime + APP_SECRET;
         const sign = crypto.createHash('sha256').update(signStr).digest('hex');
+
+        // --- BẮT ĐẦU GHI LOG GỠ LỖI ---
+        console.log("\n--- Vercel Function Log ---");
+        console.log(`Timestamp: ${new Date().toISOString()}`);
+        const maskedAppKey = APP_KEY ? APP_KEY.substring(0, 4) + '...' + APP_KEY.slice(-4) : "NOT SET";
+        const maskedAppSecret = APP_SECRET ? APP_SECRET.substring(0, 4) + '...' + APP_SECRET.slice(-4) : "NOT SET";
+        console.log(`APP_KEY used: ${maskedAppKey} (Length: ${APP_KEY ? APP_KEY.length : 0})`);
+        console.log(`APP_SECRET used: ${maskedAppSecret} (Length: ${APP_SECRET ? APP_SECRET.length : 0})`);
+        console.log("--- Signature Details ---");
+        console.log(`Input (truncated): ${truncatedQuery}`);
+        console.log(`Salt: ${salt}`);
+        console.log(`Curtime: ${curtime}`);
+        console.log(`Sign String: ${signStr}`);
+        console.log(`Generated Sign: ${sign}`);
+        console.log("------------------------");
+        // --- KẾT THÚC GHI LOG GỠ LỖI ---
 
         const params = new URLSearchParams();
         params.append('q', query);
